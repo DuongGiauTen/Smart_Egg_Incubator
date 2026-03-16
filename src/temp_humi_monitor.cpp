@@ -1,45 +1,45 @@
 #include "temp_humi_monitor.h"
-DHT20 dht20;
-LiquidCrystal_I2C lcd(33,16,2);
+#include "shared_data.h"
 
+DHT20 dht20;
+// Đã CHUYỂN phần khai báo LCD sang file của Task LCD để code gọn gàng hơn
 
 void temp_humi_monitor(void *pvParameters){
-
     Wire.begin(11, 12);
-    Serial.begin(115200);
     dht20.begin();
 
     while (1){
-        /* code */
-        
         dht20.read();
-        // Reading temperature in Celsius
         float temperature = dht20.getTemperature();
-        // Reading humidity
         float humidity = dht20.getHumidity();
 
-        
-
-        // Check if any reads failed and exit early
         if (isnan(temperature) || isnan(humidity)) {
             Serial.println("Failed to read from DHT sensor!");
-            temperature = humidity =  -1;
-            //return;
+        } else {
+            // 1. Cất dữ liệu an toàn và phất cờ cho Task 1 (LED), Task 2 (Neo)
+            set_sensor_data(temperature, humidity);
+
+            // 2. ĐÁNH GIÁ ĐIỀU KIỆN ĐỂ PHẤT CỜ CHO LCD (Yêu cầu của Task 3)
+            // Giả sử: 
+            // - Bình thường: Nhiệt độ < 28 VÀ Độ ẩm >= 40
+            // - Nguy hiểm: Nhiệt độ > 32 HOẶC Độ ẩm < 30
+            // - Cảnh báo: Các trường hợp còn lại
+            if (temperature < 28.0 && humidity >= 40.0) {
+                xSemaphoreGive(xStateNormal);
+            } 
+            else if (temperature > 32.0 || humidity < 30.0) {
+                xSemaphoreGive(xStateCritical);
+            } 
+            else {
+                xSemaphoreGive(xStateWarning);
+            }
+
+            Serial.print("Humidity: ");
+            Serial.print(humidity);
+            Serial.print("%  Temperature: ");
+            Serial.print(temperature);
+            Serial.println("°C");
         }
-
-        //Update global variables for temperature and humidity
-        glob_temperature = temperature;
-        glob_humidity = humidity;
-
-        // Print the results
-        
-        Serial.print("Humidity: ");
-        Serial.print(humidity);
-        Serial.print("%  Temperature: ");
-        Serial.print(temperature);
-        Serial.println("°C");
-        
-        vTaskDelay(5000);
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
-    
 }

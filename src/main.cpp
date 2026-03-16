@@ -1,4 +1,5 @@
 #include "global.h"
+#include "shared_data.h"
 
 #include "led_blinky.h"
 #include "neo_blinky.h"
@@ -13,10 +14,14 @@
 #include "task_wifi.h"
 #include "task_webserver.h"
 #include "task_core_iot.h"
+#include "lcd_display.h"
 
 void setup()
 {
   Serial.begin(115200);
+
+  init_shared_data();
+
   check_info_File(0);
 
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
@@ -25,6 +30,7 @@ void setup()
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
   // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
   xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);
+  xTaskCreate(lcd_display_task, "Task LCD", 2048, NULL, 2, NULL); // THÊM DÒNG NÀY
   // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
 }
 
