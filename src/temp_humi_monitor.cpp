@@ -24,14 +24,20 @@ void temp_humi_monitor(void *pvParameters){
             // - Bình thường: Nhiệt độ < 28 VÀ Độ ẩm >= 40
             // - Nguy hiểm: Nhiệt độ > 32 HOẶC Độ ẩm < 30
             // - Cảnh báo: Các trường hợp còn lại
-            if (temperature < 28.0 && humidity >= 40.0) {
-                xSemaphoreGive(xStateNormal);
-            } 
-            else if (temperature > 32.0 || humidity < 30.0) {
-                xSemaphoreGive(xStateCritical);
-            } 
-            else {
-                xSemaphoreGive(xStateWarning);
+            if (temperature > 30 ){
+                set_state_temp(TEMP_HIGH);
+            } else if (temperature < 25){
+                set_state_temp(TEMP_LOW);
+            } else {
+                set_state_temp(TEMP_NORMAL);
+            }
+
+            if (humidity < 60){
+                set_state_humi(HUMI_LOW);
+            } else if (humidity > 80){
+                set_state_humi(HUMI_HIGH);
+            } else {
+                set_state_humi(HUMI_NORMAL);
             }
 
             Serial.print("Humidity: ");

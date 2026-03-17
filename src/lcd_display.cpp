@@ -3,43 +3,57 @@
 #include "LiquidCrystal_I2C.h"
 
 void lcd_display_task(void *pvParameters) {
-    // Khởi tạo LCD ở đây (Trong file gốc là địa chỉ 33 tương đương 0x21)
-    LiquidCrystal_I2C lcd(33, 16, 2); 
+    // Khởi tạo LCD. Lưu ý: 33 trong hệ thập phân chính là địa chỉ 0x21 (Hex)
+    LiquidCrystal_I2C lcd(0x21, 16, 2); 
     lcd.init();
     lcd.backlight();
     
     while(1) {
-        // Dùng if-else để kiểm tra xem cờ nào đang được phất
-        // pdMS_TO_TICKS(10) là thời gian chờ tối đa 10ms để check cờ
+        // Lấy dữ liệu
+        float current_temp = get_temperature();
+        float current_humi = get_humidity();
+        uint8_t temp_state = get_state_temp();
+        uint8_t humi_state = get_state_humi();
         
-        if (xSemaphoreTake(xStateNormal, pdMS_TO_TICKS(10)) == pdTRUE) {
-            float t = get_temperature();
-            float h = get_humidity();
-            
-            lcd.clear();
-            lcd.setCursor(0, 0); lcd.print("T:"); lcd.print(t); lcd.print("C H:"); lcd.print(h); lcd.print("%");
-            lcd.setCursor(0, 1); lcd.print("St: NORMAL");
-            
-        } 
-        else if (xSemaphoreTake(xStateWarning, pdMS_TO_TICKS(10)) == pdTRUE) {
-            float t = get_temperature();
-            float h = get_humidity();
-            
-            lcd.clear();
-            lcd.setCursor(0, 0); lcd.print("T:"); lcd.print(t); lcd.print("C H:"); lcd.print(h); lcd.print("%");
-            lcd.setCursor(0, 1); lcd.print("St: WARNING");
-            
-        } 
-        else if (xSemaphoreTake(xStateCritical, pdMS_TO_TICKS(10)) == pdTRUE) {
-            float t = get_temperature();
-            float h = get_humidity();
-            
-            lcd.clear();
-            lcd.setCursor(0, 0); lcd.print("T:"); lcd.print(t); lcd.print("C H:"); lcd.print(h); lcd.print("%");
-            lcd.setCursor(0, 1); lcd.print("St: CRITICAL");
+        // ==========================================
+        // DÒNG 1: HIỂN THỊ GIÁ TRỊ (Ví dụ: T:25.5 H:60.2)
+        // ==========================================
+        
+        // Nhiệt độ (Góc trên bên trái)
+        lcd.setCursor(0, 0);
+        lcd.print("T:");
+        lcd.print(current_temp, 1); // Nên để 1 số thập phân cho gọn trên màn 16x2
+        lcd.print(" ");             // Xóa khoảng trắng thừa nếu số bị tụt chữ số
+        
+        // Độ ẩm (Góc trên bên phải, bắt đầu từ cột 8)
+        lcd.setCursor(8, 0);
+        lcd.print("H:");
+        lcd.print(current_humi, 1);
+        lcd.print(" ");
+        
+        // ==========================================
+        // DÒNG 2: HIỂN THỊ TRẠNG THÁI (Ví dụ: T:NORM  H:HIGH)
+        // ==========================================
+        
+        // Trạng thái Nhiệt độ (Góc dưới bên trái, tối đa 8 ký tự)
+        lcd.setCursor(0, 1);
+        switch (temp_state) {
+            case TEMP_LOW:    lcd.print("T:LOW   "); break;
+            case TEMP_NORMAL: lcd.print("T:NORM  "); break;
+            case TEMP_HIGH:   lcd.print("T:HIGH  "); break;
+            default:          lcd.print("T:UNK   "); break;
+        }
+
+        // Trạng thái Độ ẩm (Góc dưới bên phải, bắt đầu từ cột 8)
+        lcd.setCursor(8, 1);
+        switch (humi_state) {
+            case HUMI_LOW:    lcd.print("H:LOW   "); break;
+            case HUMI_NORMAL: lcd.print("H:NORM  "); break;
+            case HUMI_HIGH:   lcd.print("H:HIGH  "); break;
+            default:          lcd.print("H:UNK   "); break;
         }
         
-        // Nghỉ ngơi 100ms trước khi kiểm tra lại các cờ
+        // Nghỉ ngơi 100ms trước khi cập nhật lại khung hình
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
