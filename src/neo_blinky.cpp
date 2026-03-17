@@ -6,6 +6,8 @@ void neo_blinky(void *pvParameters){
     strip.begin();
     strip.clear();
     strip.show();
+    strip.setBrightness(20);
+
 
     while(1) {
         // Task sẽ block (nằm chờ) ở đây cho đến khi Sensor đọc xong và "phất cờ"
