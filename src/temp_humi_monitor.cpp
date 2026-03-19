@@ -24,6 +24,7 @@ void temp_humi_monitor(void *pvParameters){
             // - Bình thường: Nhiệt độ < 28 VÀ Độ ẩm >= 40
             // - Nguy hiểm: Nhiệt độ > 32 HOẶC Độ ẩm < 30
             // - Cảnh báo: Các trường hợp còn lại
+            
             if (temperature > 30 ){
                 set_state_temp(TEMP_HIGH);
             } else if (temperature < 25){
@@ -40,12 +41,12 @@ void temp_humi_monitor(void *pvParameters){
                 set_state_humi(HUMI_NORMAL);
             }
 
-            Serial.print("Humidity: ");
-            Serial.print(humidity);
-            Serial.print("%  Temperature: ");
-            Serial.print(temperature);
-            Serial.println("°C");
+            // Serial.print("Humidity: ");
+            // Serial.print(humidity);
+            // Serial.print("%  Temperature: ");
+            // Serial.print(temperature);
+            // Serial.println("°C");
         }
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

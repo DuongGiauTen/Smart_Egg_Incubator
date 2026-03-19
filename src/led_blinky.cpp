@@ -22,7 +22,7 @@ void led_blinky(void *pvParameters){
                     break;
                 case TEMP_NORMAL:
                     blink_delay = 300; // Nhiệt độ bình thường -> Nháy trung bình
-                    Serial.println("LED: NORMAL TEMPERATURE -> MEDIUM BLINK");
+                    //Serial.println("LED: NORMAL TEMPERATURE -> MEDIUM BLINK");
                     break;
                 case TEMP_HIGH:
                     blink_delay = 100; // Nhiệt độ cao -> Nháy nhanh

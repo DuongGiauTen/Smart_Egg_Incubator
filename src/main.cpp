@@ -15,6 +15,7 @@
 #include "task_webserver.h"
 #include "task_core_iot.h"
 #include "lcd_display.h"
+#include "tinyml.h"
 
 void setup()
 {
@@ -28,8 +29,8 @@ void setup()
   xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
   xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
-  // xTaskCreate( tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);
-  xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);
+  xTaskCreate(tiny_ml_task, "Tiny ML Task" ,4096  ,NULL  ,2 , NULL);
+  //xTaskCreate(coreiot_task, "CoreIOT Task" ,4096  ,NULL  ,2 , NULL);
   xTaskCreate(lcd_display_task, "Task LCD", 2048, NULL, 2, NULL); // THÊM DÒNG NÀY
   // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
 }
