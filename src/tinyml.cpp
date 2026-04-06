@@ -75,7 +75,6 @@ void tiny_ml_task(void *pvParameters) {
             Serial.println("DỮ LIỆU BẤT THƯỜNG / LỖI ❌");
         }
 
-        // Chạy AI mỗi 2 giây 1 lần
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

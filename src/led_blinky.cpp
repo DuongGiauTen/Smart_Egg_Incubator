@@ -31,6 +31,7 @@ void led_blinky(void *pvParameters){
                 default:
                     blink_delay = 1000; // Mặc định nếu có lỗi trạng thái
                     Serial.println("LED: UNKNOWN TEMPERATURE STATE -> DEFAULT BLINK");
+
             }
         }
 

@@ -1,6 +1,16 @@
 // #include "mainserver.h"
 // #include <WiFi.h>
 // #include <WebServer.h>
+// #include "shared_data.h"
+
+// // Khai báo để file này hiểu các biến bên global.cpp
+// extern String ssid;
+// extern String password;
+// extern String wifi_ssid;
+// extern String wifi_password;
+// extern float glob_temperature;
+// extern float glob_humidity;
+// //!
 
 // bool led1_state = false;
 // bool led2_state = false;
@@ -13,8 +23,13 @@
 
 // String mainPage()
 // {
-//   float temperature = glob_temperature;
-//   float humidity = glob_humidity;
+//   // float temperature = glob_temperature;
+//   // float humidity = glob_humidity;
+  
+//   // Cập nhật giá trị ngay lúc vừa load trang
+//   float temperature = get_temperature(); 
+//   float humidity = get_humidity();
+
 //   String led1 = led1_state ? "ON" : "OFF";
 //   String led2 = led2_state ? "ON" : "OFF";
 
@@ -302,8 +317,12 @@
 
 // void handleSensors()
 // {
-//   float t = glob_temperature;
-//   float h = glob_humidity;
+//   // float t = glob_temperature;
+//   // float h = glob_humidity;
+//   // Gọi hàm get để lấy dữ liệu "nóng hổi" nhất từ Shared Data
+//   float t = get_temperature(); 
+//   float h = get_humidity();
+
 //   String json = "{\"temp\":" + String(t) + ",\"hum\":" + String(h) + "}";
 //   server.send(200, "application/json", json);
 // }
@@ -336,6 +355,13 @@
 // {
 //   WiFi.mode(WIFI_AP);
 //   WiFi.softAP(ssid.c_str(), password.c_str());
+//   // if(xSemaphoreTake(xSerialMutex, portMAX_DELAY))
+//   // {
+//   //   Serial.print("AP IP address: ");
+//   //   Serial.println(WiFi.softAPIP());
+
+//   //   xSemaphoreGive(xSerialMutex);
+//   // }
 //   Serial.print("AP IP address: ");
 //   Serial.println(WiFi.softAPIP());
 //   isAPMode = true;
@@ -353,16 +379,23 @@
 //   {
 //     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
 //   }
-//   Serial.print("Connecting to: ");
-//   Serial.print(wifi_ssid.c_str());
 
-//   Serial.print(" Password: ");
-//   Serial.print(wifi_password.c_str());
+//   if(xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+//     Serial.print("Connecting to: ");
+//     Serial.print(wifi_ssid.c_str());
+
+//     Serial.print(" Password: ");
+//     Serial.print(wifi_password.c_str());
+//   xSemaphoreGive(xSerialMutex);
+//   }
 // }
 
 // // ========== Main task ==========
 // void main_server_task(void *pvParameters)
 // {
+//   // Đợi 3 giây để Serial Monitor trên máy tính kịp khởi động
+//   vTaskDelay(pdMS_TO_TICKS(3000));
+
 //   pinMode(BOOT_PIN, INPUT_PULLUP);
 
 //   startAP();

@@ -18,6 +18,7 @@ void neo_blinky(void *pvParameters){
             float current_humi = get_humidity();
             uint8_t humi_state = get_state_humi(); // Lấy trạng thái độ ẩm đã được Task Sensor đánh giá
 
+
             // Ánh xạ 3 mức độ ẩm với 3 màu sắc
             switch (humi_state) {
                 case HUMI_LOW:
@@ -36,7 +37,33 @@ void neo_blinky(void *pvParameters){
                     strip.setPixelColor(0, strip.Color(255, 255, 255)); // Mặc định nếu có lỗi trạng thái -> Trắng
                     Serial.println("NEO: UNKNOWN HUMIDITY STATE -> WHITE");
             }
+
+            // LẤY ĐỘ SÁNG TỪ WEB (thông qua shared_data) VÀ ÁP DỤNG NGAY
+            int brightness = get_neo_brightness();
+            strip.setBrightness(brightness);
+
             
+        //     // Dùng Mutex khi in log Serial
+        //     if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+        //         // Ánh xạ 3 mức độ ẩm với 3 màu sắc
+        //         if (current_humi < 40.0) {
+        //             // Mức 1: Độ ẩm thấp (< 40%) -> Màu Xanh Dương (Khô ráo)
+        //             strip.setPixelColor(0, strip.Color(0, 0, 255));
+        //             Serial.println("NeoPixel: LOW HUMIDITY -> BLUE");
+                    
+        //         } else if (current_humi >= 40.0 && current_humi <= 70.0) {
+        //             // Mức 2: Độ ẩm bình thường (40% - 70%) -> Màu Xanh Lá (Thoải mái)
+        //             strip.setPixelColor(0, strip.Color(0, 255, 0));
+        //             Serial.println("NeoPixel: NORMAL HUMIDITY -> GREEN");
+                    
+        //         } else {
+        //             // Mức 3: Độ ẩm cao (> 70%) -> Màu Đỏ (Ẩm ướt / Cảnh báo)
+        //             strip.setPixelColor(0, strip.Color(255, 0, 0));
+        //             Serial.println("NeoPixel: HIGH HUMIDITY -> RED");
+        //         }
+        //     xSemaphoreGive(xSerialMutex); // Nhả khóa sau khi in log
+        // }
+
             // Cập nhật dải đèn LED với màu vừa set
             strip.show(); 
         }
