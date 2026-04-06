@@ -5,7 +5,7 @@ DHT20 dht20;
 // Đã CHUYỂN phần khai báo LCD sang file của Task LCD để code gọn gàng hơn
 
 void temp_humi_monitor(void *pvParameters){
-    Wire.begin(11, 12);
+    //Wire.begin(11, 12);
     dht20.begin();
 
     while (1){
@@ -34,11 +34,15 @@ void temp_humi_monitor(void *pvParameters){
                 xSemaphoreGive(xStateWarning);
             }
 
-            Serial.print("Humidity: ");
-            Serial.print(humidity);
-            Serial.print("%  Temperature: ");
-            Serial.print(temperature);
-            Serial.println("°C");
+            // Bọc đoạn in thông số định kỳ
+            if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+                Serial.print("Humidity: ");
+                Serial.print(humidity);
+                Serial.print("%  Temperature: ");
+                Serial.print(temperature);
+                Serial.println("°C");
+                xSemaphoreGive(xSerialMutex); // Nhả khóa
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
     }

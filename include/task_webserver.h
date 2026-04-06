@@ -12,6 +12,9 @@
 extern AsyncWebServer server;
 extern AsyncWebSocket ws;
 
+void task_webserver(void *pvParameters); //
+void Webserver_sendata(String data); //
+
 void Webserver_stop();
 void Webserver_reconnect();
 void Webserver_sendata(String data);

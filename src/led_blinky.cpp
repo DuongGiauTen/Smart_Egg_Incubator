@@ -12,17 +12,19 @@ void led_blinky(void *pvParameters){
             
             // Đã có cờ hiệu! Tiến hành lấy nhiệt độ an toàn
             float current_temp = get_temperature();
-
-            // Định nghĩa 3 hành vi theo nhiệt độ
-            if (current_temp < 28.0) {
-                blink_delay = 1000; // < 28 độ: Bình thường -> Nháy chậm (Chu kỳ 2s)
-                Serial.println("LED State: NORMAL");
-            } else if (current_temp >= 28.0 && current_temp <= 32.0) {
-                blink_delay = 500;  // 28 - 32 độ: Cảnh báo -> Nháy vừa (Chu kỳ 1s)
-                Serial.println("LED State: WARNING");
-            } else {
-                blink_delay = 100;  // > 32 độ: Nguy hiểm -> Nháy nhanh (Chu kỳ 0.2s)
-                Serial.println("LED State: CRITICAL");
+            if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+                // Định nghĩa 3 hành vi theo nhiệt độ
+                if (current_temp < 28.0) {
+                    blink_delay = 1000; // < 28 độ: Bình thường -> Nháy chậm (Chu kỳ 2s)
+                    Serial.println("LED State: NORMAL");
+                } else if (current_temp >= 28.0 && current_temp <= 32.0) {
+                    blink_delay = 500;  // 28 - 32 độ: Cảnh báo -> Nháy vừa (Chu kỳ 1s)
+                    Serial.println("LED State: WARNING");
+                } else {
+                    blink_delay = 100;  // > 32 độ: Nguy hiểm -> Nháy nhanh (Chu kỳ 0.2s)
+                    Serial.println("LED State: CRITICAL");
+                }
+            xSemaphoreGive(xSerialMutex); // Nhả khóa
             }
         }
 
