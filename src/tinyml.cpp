@@ -1,7 +1,6 @@
 #include "tinyml.h"
 #include "shared_data.h"
 
-
 namespace {
     tflite::ErrorReporter *error_reporter = nullptr;
     const tflite::Model *model = nullptr;
@@ -38,43 +37,66 @@ void setupTinyML() {
     Serial.println("TensorFlow Lite Micro initialized on ESP32.");
 }
 
-
 void tiny_ml_task(void *pvParameters) {
     setupTinyML();
 
+    // --- CÁC BIẾN CHO BỘ ĐỆM VÒNG (TIME-SERIES) ---
+    float temp_history[5] = {0};
+    float humi_history[5] = {0};
+    int history_index = 0;
+    bool is_first_run = true;
+
     while (1) {
-        // 1. Lấy dữ liệu thực tế từ module shared_data
+        // 1. Lấy dữ liệu thực tế
         float current_temp = get_temperature();
         float current_humi = get_humidity();
 
-        // 2. Đưa dữ liệu vào bộ não AI
-        input->data.f[0] = current_temp;
-        input->data.f[1] = current_humi;
+        // 2. Xử lý lưu trữ vào bộ đệm
+        if (is_first_run) {
+            // Lần chạy đầu tiên: Copy số liệu hiện tại cho cả 5 ô
+            for (int i = 0; i < 5; i++) {
+                temp_history[i] = current_temp;
+                humi_history[i] = current_humi;
+            }
+            is_first_run = false;
+        } else {
+            // Các lần chạy sau: Ghi đè vào vị trí cũ nhất
+            temp_history[history_index] = current_temp;
+            humi_history[history_index] = current_humi;
+            history_index = (history_index + 1) % 5; // Tăng index, quay vòng về 0 nếu đạt 5
+        }
 
-        // 3. Chạy suy luận (Inference)
+        // 3. Nạp 10 dữ liệu vào AI (Từ cũ nhất đến mới nhất)
+        for (int i = 0; i < 5; i++) {
+            int idx = (history_index + i) % 5; 
+            input->data.f[i*2]     = temp_history[idx];
+            input->data.f[i*2 + 1] = humi_history[idx];
+        }
+
+        // 4. Chạy suy luận (Inference)
         TfLiteStatus invoke_status = interpreter->Invoke();
         if (invoke_status != kTfLiteOk) {
             Serial.println("AI Invoke failed!");
-            vTaskDelay(pdMS_TO_TICKS(5000));
+            vTaskDelay(pdMS_TO_TICKS(2000));
             continue;
         }
 
-        // 4. Đọc kết quả
-        // AI sẽ trả về 2 xác suất cho 2 nhãn (0: Bình thường, 1: Bất thường)
-        float prob_normal = output->data.f[0];   
-        float prob_abnormal = output->data.f[1]; 
+        // 5. Đọc kết quả (0: Tin cậy, 1: Lỗi/Rác)
+        float prob_reliable = output->data.f[0];   
+        float prob_error = output->data.f[1]; 
 
-        // 5. In ra Serial Monitor cực kỳ dễ hiểu
-        Serial.print("[TinyML] Nhiệt độ: "); Serial.print(current_temp);
-        Serial.print("C | Độ ẩm: "); Serial.print(current_humi);
-        Serial.print("% ===> KẾT LUẬN AI: ");
+        Serial.print("[TinyML] T_Hiện_tại: "); Serial.print(current_temp);
+        Serial.print("C | H_Hiện_tại: "); Serial.print(current_humi);
+        Serial.print("% ===> AI KẾT LUẬN: ");
 
-        if (prob_normal > prob_abnormal) {
-            Serial.println("DỮ LIỆU BÌNH THƯỜNG (Tin cậy) ✅");
+        if (prob_reliable > prob_error) {
+            Serial.println("DỮ LIỆU TIN CẬY ✅ (Cho phép gửi Cloud)");
+            // Phất cờ cho phép Task CoreIOT lấy dữ liệu gửi đi
+            // xSemaphoreGive(xDataReliableSemaphore); 
         } else {
-            Serial.println("DỮ LIỆU BẤT THƯỜNG / LỖI ❌");
+            Serial.println("RÁC / NHIỄU CẢM BIẾN ❌ (Chặn, không gửi Cloud)");
         }
 
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(2000)); // AI chạy mỗi 2 giây
     }
 }
