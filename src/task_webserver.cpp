@@ -24,15 +24,18 @@ void Webserver_sendata(String data)
 }
 
 // --- HÀM XỬ LÝ DỮ LIỆU TỪ WEB GỬI XUỐNG ---
-void handleWebSocketMessage(String message) {
+void handleWebSocketMessage(String message)
+{
     DynamicJsonDocument doc(1024);
     DeserializationError error = deserializeJson(doc, message);
-    if (error) return;
+    if (error)
+        return;
 
     String page = doc["page"] | "";
-    
+
     // NẾU LÀ GÓI TIN CÀI ĐẶT
-    if (page == "setting") {
+    if (page == "setting")
+    {
         JsonObject value = doc["value"];
         String ssid = value["ssid"] | "";
         String pass = value["password"] | "";
@@ -43,7 +46,7 @@ void handleWebSocketMessage(String message) {
 
         Serial.println(">> Nhan cau hinh moi tu Web. Dang luu...");
         // Gọi hàm lưu với đủ 6 tham số
-        Save_info_File(ssid, pass, dev_id, token, server_url, port); 
+        Save_info_File(ssid, pass, dev_id, token, server_url, port);
 
         // Sau khi lưu xong, gửi phản hồi về Web và khởi động lại để áp dụng cấu hình mới
         Serial.println(">> Da luu xong! Dang khoi dong lai de ap dung mang moi...");
@@ -52,23 +55,26 @@ void handleWebSocketMessage(String message) {
         need_restart = true;
         restart_time = millis();
     }
-    
+
     // NẾU LÀ GÓI TIN ĐIỀU KHIỂN THIẾT BỊ
-    else if (page == "device") {
+    else if (page == "device")
+    {
         JsonObject value = doc["value"];
         String name = value["name"] | "";
         String action = value["action"] | "";
 
         // --- BẬT/TẮT CÔNG TẮC ĐÈN (GPIO 18) ---
-        if (name == "GPIO18" && action == "toggle") {
-            int state = value["state"] | 0; 
+        if (name == "GPIO18" && action == "toggle")
+        {
+            int state = value["state"] | 0;
             digitalWrite(18, state ? HIGH : LOW);
             Serial.printf(">> [WEB] Cong tac den (GPIO 18) -> %s\n", state ? "ON" : "OFF");
         }
-        
+
         // --- ĐIỀU CHỈNH ĐỘ SÁNG NEO PIXEL ---
-        else if (name == "NEO" && action == "brightness") {
-            int level = value["level"] | 0; 
+        else if (name == "NEO" && action == "brightness")
+        {
+            int level = value["level"] | 0;
             set_neo_brightness(level); // Gửi vào kho shared_data
             Serial.printf(">> [WEB] Do sang NEO Pixel -> %d\n", level);
         }
@@ -112,7 +118,7 @@ void connnectWSV()
               { request->send(LittleFS, "/styles.css", "text/css"); });
 
     server.on("/raphael.min.js", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(LittleFS, "/raphael.min.js", "application/javascript"); }); 
+              { request->send(LittleFS, "/raphael.min.js", "application/javascript"); });
     server.on("/justgage.js", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(LittleFS, "/justgage.js", "application/javascript"); });
 
@@ -124,14 +130,14 @@ void connnectWSV()
 
 void Webserver_stop()
 {
-    if (webserver_isrunning) {
+    if (webserver_isrunning)
+    {
         ws.closeAll();
         server.end();
         webserver_isrunning = false;
         Serial.println(">> Web Server Da Dung!");
     }
 }
-
 
 void Webserver_reconnect()
 {
@@ -141,7 +147,6 @@ void Webserver_reconnect()
     }
     ElegantOTA.loop();
 }
-
 
 // === TASK CHÍNH CỦA WEBSERVER ĐÃ ĐƯỢC LÀM GỌN LẠI ===
 // void task_webserver(void *pvParameters) {
@@ -153,9 +158,9 @@ void Webserver_reconnect()
 
 //     // KHOÁ CHẶT Ở ĐÂY: Cho phép cả chế độ WIFI_AP_STA (Smart Mode) đi qua
 //     while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP && WiFi.getMode() != WIFI_AP_STA) {
-//         vTaskDelay(pdMS_TO_TICKS(500)); 
+//         vTaskDelay(pdMS_TO_TICKS(500));
 //     }
-    
+
 //     Serial.println(">> Mang da san sang! Tien hanh mo cong Web Server...");
 //     Serial.println(">> Web Server Task Started!");
 
@@ -184,51 +189,63 @@ void Webserver_reconnect()
 // }
 
 // === TASK CHÍNH CỦA WEBSERVER ĐÃ ĐƯỢC LÀM GỌN LẠI ===
-void task_webserver(void *pvParameters) {
+void task_webserver(void *pvParameters)
+{
     Serial.println(">> Web Server Task Started! Cho mang 1 giay...");
 
-    //khởi tạo đèn led
+    // khởi tạo đèn led
     pinMode(18, OUTPUT);
     digitalWrite(18, LOW);
 
     // KHOÁ CHẶT Ở ĐÂY: Cho phép cả chế độ WIFI_AP_STA (Smart Mode) đi qua
-    while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP && WiFi.getMode() != WIFI_AP_STA) {
-        vTaskDelay(pdMS_TO_TICKS(500)); 
+    while (WiFi.status() != WL_CONNECTED && WiFi.getMode() != WIFI_AP && WiFi.getMode() != WIFI_AP_STA)
+    {
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
-    
+
     Serial.println(">> Mang da san sang! Tien hanh mo cong Web Server & Task Started!");
 
     unsigned long last_send = 0;
     unsigned long last_send_info = 0; // BỔ SUNG: Biến đếm nhịp cho Tab Thông tin
 
-    while (1) {
+    while (1)
+    {
         // === KHỐI ĐẾM NGƯỢC RESTART ===
-        if (need_restart && (millis() - restart_time > 1500)) {
+        if (need_restart && (millis() - restart_time > 1500))
+        {
             Serial.println("\n>> Da luu xong! Khoi dong lai ESP32 de ap dung mang...");
             ESP.restart();
         }
-        
+
         // 1. Luôn gọi reconnect để đảm bảo trạng thái Web và OTA hoạt động
         Webserver_reconnect();
 
         // 2. Bơm dữ liệu cảm biến lên Web mỗi 2 giây (CHỈ KHI WEB ĐANG CHẠY)
-        if (webserver_isrunning && (millis() - last_send > 2000)) {
+        if (webserver_isrunning && (millis() - last_send > 2000))
+        {
             last_send = millis();
 
             // LẤY DỮ LIỆU AN TOÀN QUA MUTEX
             float t = get_temperature();
             float h = get_humidity();
 
-            if (t != -1 && h != -1) {
-                String json = "{\"temperature\":" + String(t, 1) + ",\"humidity\":" + String(h, 1) + "}";
+            if (t != -1 && h != -1)
+            {
+                DynamicJsonDocument doc(128); // Tạo document JSON nhỏ
+                doc["temperature"] = t;       // ArduinoJson tự động xử lý float
+                doc["humidity"] = h;
+
+                String json;
+                serializeJson(doc, json); // Chuyển thành chuỗi JSON
                 Webserver_sendata(json);
             }
         }
 
         // 3. BỔ SUNG: Bơm Thông tin hệ thống lên Web mỗi 5 giây
-        if (webserver_isrunning && (millis() - last_send_info > 5000)) {
+        if (webserver_isrunning && (millis() - last_send_info > 5000))
+        {
             last_send_info = millis();
-            
+
             DynamicJsonDocument doc(512);
             doc["page"] = "info";
             doc["ssid"] = WiFi.status() == WL_CONNECTED ? WiFi.SSID() : "AP Mode (YOLO_UNO_SETUP)";
@@ -236,7 +253,7 @@ void task_webserver(void *pvParameters) {
             doc["mac"] = WiFi.macAddress();
             doc["ram"] = ESP.getFreeHeap() / 1024; // Tính bằng KB
             doc["uptime"] = millis() / 1000;       // Tính bằng Giây
-            
+
             String infoJson;
             serializeJson(doc, infoJson);
             Webserver_sendata(infoJson);

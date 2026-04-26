@@ -12,8 +12,8 @@ uint8_t humi_state = 0; // 0: Thấp, 1: Bình thường, 2: Cao
 
 SemaphoreHandle_t xSensorDataMutex = NULL;
 SemaphoreHandle_t xTempUpdateSemaphore = NULL;
-SemaphoreHandle_t xHumiUpdateSemaphore = NULL; // THÊM MỚI
-SemaphoreHandle_t xSerialMutex = NULL; // Thêm dòng này
+SemaphoreHandle_t xHumiUpdateSemaphore = NULL; 
+SemaphoreHandle_t xSerialMutex = NULL; 
 
 // Khai báo biến
 SemaphoreHandle_t xStateNormal = NULL;
@@ -96,7 +96,10 @@ void set_state_humi(uint8_t humiState) {
 static int current_neo_brightness = 50; 
 
 void set_neo_brightness(int brightness) {
-    current_neo_brightness = brightness;
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        current_neo_brightness = brightness;
+        xSemaphoreGive(xSensorDataMutex);
+    }
 }
 
 int get_neo_brightness() {
