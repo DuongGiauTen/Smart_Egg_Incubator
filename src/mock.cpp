@@ -5,7 +5,7 @@ void mock_function(void *pvParameters)
     int counter = 0;
     while (1)
     {
-        set_sensor_data(random(250, 260) / 10.0, random(600, 610) / 10.0);
+        set_sensor_data(random(250, 270) / 10.0, random(600, 650) / 10.0);
         // Serial.print("[MOCK] Temperature: ");
         // Serial.print(get_temperature());
         // Serial.print("°C, Humidity: ");
@@ -17,8 +17,8 @@ void mock_function(void *pvParameters)
         Serial.println(counter);
         if (counter >= 10)
         {
-            //set_sensor_data(40.5, 85.0); // Simulate anomaly
-            //vTaskDelay(1000); // Wait a bit before resetting the counter
+            set_sensor_data(40.5, 85.0); // Simulate anomaly
+            vTaskDelay(1000); // Wait a bit before resetting the counter
             counter = 0;
             Serial.println("[MOCK] Simulating Anomaly: High Temperature and Humidity!");
         }
