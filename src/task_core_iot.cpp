@@ -1,120 +1,84 @@
-
 #include "task_core_iot.h"
+#include "shared_data.h"
+#include "task_check_info.h"
 
+// Khởi tạo đối tượng ThingsBoard
 constexpr uint32_t MAX_MESSAGE_SIZE = 1024U;
-
 WiFiClient wifiClient;
 Arduino_MQTT_Client mqttClient(wifiClient);
 ThingsBoard tb(mqttClient, MAX_MESSAGE_SIZE);
 
-constexpr char LED_STATE_ATTR[] = "ledState";
+void coreiot_task(void *pvParameters) {
+    Serial.println(">> Task CoreIoT Started! Cho mang Internet...");
 
-volatile int ledMode = 0;
-volatile bool ledState = false;
-
-constexpr uint16_t BLINKING_INTERVAL_MS_MIN = 10U;
-constexpr uint16_t BLINKING_INTERVAL_MS_MAX = 60000U;
-volatile uint16_t blinkingInterval = 1000U;
-
-constexpr int16_t telemetrySendInterval = 10000U;
-
-constexpr std::array<const char *, 2U> SHARED_ATTRIBUTES_LIST = {
-    LED_STATE_ATTR,
-};
-
-void processSharedAttributes(const Shared_Attribute_Data &data)
-{
-    for (auto it = data.begin(); it != data.end(); ++it)
-    {
-        // if (strcmp(it->key().c_str(), BLINKING_INTERVAL_ATTR) == 0)
-        // {
-        //     const uint16_t new_interval = it->value().as<uint16_t>();
-        //     if (new_interval >= BLINKING_INTERVAL_MS_MIN && new_interval <= BLINKING_INTERVAL_MS_MAX)
-        //     {
-        //         blinkingInterval = new_interval;
-        //         Serial.print("Blinking interval is set to: ");
-        //         Y
-        //             Serial.println(new_interval);
-        //     }
-        // }
-        // if (strcmp(it->key().c_str(), LED_STATE_ATTR) == 0)
-        // {
-        //     ledState = it->value().as<bool>();
-        // digitalWrite(LED_PIN, ledState);
-        // Serial.print("LED state is set to: ");
-        // Serial.println(ledState);
-        // }
+    // 1. ĐỢI HỆ THỐNG CÓ MẠNG INTERNET
+    while (1) {
+        if (WiFi.status() == WL_CONNECTED) {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
-}
+    Serial.println(">> CoreIoT da nhan dien duoc Internet!");
 
-RPC_Response setLedSwitchValue(const RPC_Data &data)
-{
-    Serial.println("Received Switch state");
-    bool newState = data;
-    Serial.print("Switch state change: ");
-    Serial.println(newState);
-    return RPC_Response("setLedSwitchValue", newState);
-}
+    unsigned long last_send = 0;
 
-const std::array<RPC_Callback, 1U> callbacks = {
-    RPC_Callback{"setLedSwitchValue", setLedSwitchValue}};
-
-const Shared_Attribute_Callback attributes_callback(&processSharedAttributes, SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend());
-const Attribute_Request_Callback attribute_shared_request_callback(&processSharedAttributes, SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend());
-
-void CORE_IOT_sendata(String mode, String feed, String data)
-{
-    if (mode == "attribute")
-    {
-        tb.sendAttributeData(feed.c_str(), data);
-    }
-    else if (mode == "telemetry")
-    {
-        float value = data.toFloat();
-        tb.sendTelemetryData(feed.c_str(), value);
-    }
-    else
-    {
-        // handle unknown mode
-    }
-}
-
-void CORE_IOT_reconnect()
-{
-    if (!tb.connected())
-    {
-        if (!tb.connect(CORE_IOT_SERVER.c_str(), CORE_IOT_TOKEN.c_str(), CORE_IOT_PORT.toInt()))
-        {
-            // Serial.println("Failed to connect");
-            return;
+    while (1) {
+        // 2. LẤY THÔNG TIN KẾT NỐI TỪ KÉT SẮT (Do WebServer của Task 4 lưu vào)
+        String server = "";
+        String token = "";
+        String port_str = "";
+        
+        if (xSemaphoreTake(xConfigMutex, portMAX_DELAY)) {
+            server = String(sysConfig.iot_server);
+            token = String(sysConfig.iot_token);
+            port_str = String(sysConfig.iot_port);
+            xSemaphoreGive(xConfigMutex);
         }
 
-        tb.sendAttributeData("macAddress", WiFi.macAddress().c_str());
-
-        Serial.println("Subscribing for RPC...");
-        if (!tb.RPC_Subscribe(callbacks.cbegin(), callbacks.cend()))
-        {
-            // Serial.println("Failed to subscribe for RPC");
-            return;
+        // Nếu Web chưa được cài đặt Server / Token -> Tạm ngủ 5s rồi check lại
+        if (server.isEmpty() || token.isEmpty()) {
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
         }
 
-        if (!tb.Shared_Attributes_Subscribe(attributes_callback))
-        {
-            // Serial.println("Failed to subscribe for shared attribute updates");
-            return;
+        // 3. KẾT NỐI LÊN CLOUD BROKER (app.coreiot.io)
+        if (!tb.connected()) {
+            Serial.printf(">> Ket noi CoreIoT Server: %s, Port: %s...\n", server.c_str(), port_str.c_str());
+            
+            // Dùng Token lấy từ Web làm tham số kết nối
+            if (!tb.connect(server.c_str(), token.c_str(), port_str.toInt())) {
+                Serial.println(">> Loi ket noi CoreIoT. Thu lai sau 5s...");
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                continue;
+            }
+            Serial.println(">> Da ket noi CoreIOT Cloud thanh cong!");
         }
 
-        Serial.println("Subscribe done");
-
-        if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
-        {
-            // Serial.println("Failed to request for shared attributes");
-            return;
-        }
-        tb.sendAttributeData("localIp", WiFi.localIP().toString().c_str());
-    }
-    else if (tb.connected())
-    {
+        // Duy trì nhịp đập của MQTT
         tb.loop();
+
+        // 4. BƠM DỮ LIỆU TELEMETRY LÊN CLOUD MỖI 5 GIÂY
+        if (millis() - last_send > 5000) {
+            last_send = millis();
+            
+            // Lấy dữ liệu an toàn
+            float t = get_temperature();
+            float h = get_humidity();
+
+            // Nếu dữ liệu hợp lệ thì bắn lên Cloud
+            if (t != -1 && h != -1) {
+                // Key "temperature" và "humidity" phải khớp với bảng Dashboard trên Web CoreIoT
+                tb.sendTelemetryData("temperature", t);
+                tb.sendTelemetryData("humidity", h);
+                
+                // In log an toàn qua Mutex
+                if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+                    Serial.printf(">> [CoreIoT] Da gui Cloud -> Temp: %.1f, Humi: %.1f\n", t, h);
+                    xSemaphoreGive(xSerialMutex);
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50)); // Nhường CPU cho các Task khác
     }
 }

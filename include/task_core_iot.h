@@ -7,7 +7,6 @@
 #include <HTTPClient.h>
 #include "task_check_info.h"
 
-void CORE_IOT_sendata(String mode, String feed, String data);
-void CORE_IOT_reconnect();
+void coreiot_task(void *pvParameters);
 
 #endif
