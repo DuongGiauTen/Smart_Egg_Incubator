@@ -18,6 +18,8 @@ void neo_blinky(void *pvParameters){
             float current_humi = get_humidity();
             uint8_t humi_state = get_state_humi(); // Lấy trạng thái độ ẩm đã được Task Sensor đánh giá
 
+            strip.setPixelColor(0, strip.Color(136, 150, 255));  // temp added
+
 
             // Ánh xạ 3 mức độ ẩm với 3 màu sắc
             switch (humi_state) {

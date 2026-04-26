@@ -4,7 +4,7 @@
 
 void lcd_display_task(void *pvParameters) {
     // Khởi tạo LCD. Lưu ý: 33 trong hệ thập phân chính là địa chỉ 0x21 (Hex)
-    LiquidCrystal_I2C lcd(0x21, 16, 2); 
+    LiquidCrystal_I2C lcd(0x27, 16, 2); 
     lcd.init();
     lcd.backlight();
     
