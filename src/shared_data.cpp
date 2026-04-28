@@ -20,6 +20,8 @@ SemaphoreHandle_t xStateNormal = NULL;
 SemaphoreHandle_t xStateWarning = NULL;
 SemaphoreHandle_t xStateCritical = NULL;
 
+SemaphoreHandle_t xDataReliableSemaphore = NULL; // Cờ báo dữ liệu đã sẵn sàng và đáng tin cậy để gửi lên Cloud
+
 void init_shared_data() {
     xConfigMutex = xSemaphoreCreateMutex();
     // Khởi tạo giá trị mặc định cho sysConfig để tránh rác bộ nhớ
@@ -27,6 +29,7 @@ void init_shared_data() {
         memset(&sysConfig, 0, sizeof(SystemConfig_t));
         sysConfig.isConfigured = false;
         xSemaphoreGive(xConfigMutex);
+        xDataReliableSemaphore = xSemaphoreCreateBinary(); // Khởi tạo cờ báo dữ liệu đáng tin cậy
     }
 
     xSensorDataMutex = xSemaphoreCreateMutex();

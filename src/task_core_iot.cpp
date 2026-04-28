@@ -58,8 +58,30 @@ void coreiot_task(void *pvParameters) {
         tb.loop();
 
         // 4. BƠM DỮ LIỆU TELEMETRY LÊN CLOUD MỖI 5 GIÂY
-        if (millis() - last_send > 5000) {
-            last_send = millis();
+        // if (millis() - last_send > 5000) {
+        //     last_send = millis();
+            
+        //     // Lấy dữ liệu an toàn
+        //     float t = get_temperature();
+        //     float h = get_humidity();
+
+        //     // Nếu dữ liệu hợp lệ thì bắn lên Cloud
+        //     if (t != -1 && h != -1) {
+        //         // Key "temperature" và "humidity" phải khớp với bảng Dashboard trên Web CoreIoT
+        //         tb.sendTelemetryData("temperature", t);
+        //         tb.sendTelemetryData("humidity", h);
+                
+        //         // In log an toàn qua Mutex
+        //         if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
+        //             Serial.printf(">> [CoreIoT] Da gui Cloud -> Temp: %.1f, Humi: %.1f\n", t, h);
+        //             xSemaphoreGive(xSerialMutex);
+        //         }
+        //     }
+        // }
+
+        // 4. CHỈ BƠM DỮ LIỆU LÊN CLOUD KHI ĐƯỢC TINYML CHO PHÉP (Phất cờ)
+        // Lệnh này sẽ chặn luồng lại, đứng chờ mãi mãi (portMAX_DELAY) cho đến khi AI bảo "OK"
+        if (xSemaphoreTake(xDataReliableSemaphore, portMAX_DELAY) == pdTRUE) {
             
             // Lấy dữ liệu an toàn
             float t = get_temperature();
@@ -67,7 +89,7 @@ void coreiot_task(void *pvParameters) {
 
             // Nếu dữ liệu hợp lệ thì bắn lên Cloud
             if (t != -1 && h != -1) {
-                // Key "temperature" và "humidity" phải khớp với bảng Dashboard trên Web CoreIoT
+                // Key "temperature" và "humidity" phải khớp với bảng Dashboard
                 tb.sendTelemetryData("temperature", t);
                 tb.sendTelemetryData("humidity", h);
                 

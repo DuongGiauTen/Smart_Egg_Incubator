@@ -50,6 +50,8 @@ extern SemaphoreHandle_t xStateCritical;
 
 extern SemaphoreHandle_t xSerialMutex; // Thêm dòng này(mutex để in lần lượt trên Serial)
 
+extern SemaphoreHandle_t xDataReliableSemaphore; //  cờ báo dữ liệu đã sẵn sàng và đáng tin cậy để gửi lên Cloud
+
 void init_shared_data();
 void set_sensor_data(float temp, float humi);
 float get_temperature();

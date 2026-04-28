@@ -92,7 +92,7 @@ void tiny_ml_task(void *pvParameters) {
         if (prob_reliable > prob_error) {
             Serial.println("DỮ LIỆU TIN CẬY ✅ (Cho phép gửi Cloud)");
             // Phất cờ cho phép Task CoreIOT lấy dữ liệu gửi đi
-            // xSemaphoreGive(xDataReliableSemaphore); 
+            xSemaphoreGive(xDataReliableSemaphore); 
         } else {
             Serial.println("RÁC / NHIỄU CẢM BIẾN ❌ (Chặn, không gửi Cloud)");
         }
