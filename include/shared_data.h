@@ -20,6 +20,8 @@
 #define ROW_NUM         4 
 #define COLUMN_NUM      4
 
+
+
 typedef struct {
     char wifi_ssid[32];
     char wifi_pass[64];

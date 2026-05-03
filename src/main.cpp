@@ -19,7 +19,7 @@
 #include "tinyml.h"
 #include "mock.h"
 #include "task_keypad.h"
-
+#include "task_actuator.h"
 void setup()
 {
   delay(3000);
@@ -46,7 +46,7 @@ void setup()
       } }, "Task WiFi Monitor", 8192, NULL, 2, NULL);
 
   xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
-  xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
+  //xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
   //xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
 
   xTaskCreate(mock_function, "Task Mock", 2048, NULL, 2, NULL);
@@ -58,7 +58,8 @@ void setup()
 
   xTaskCreate(lcd_display_task, "Task LCD", 2048, NULL, 2, NULL); // THÊM DÒNG NÀY
   // xTaskCreate(Task_Toogle_BOOT, "Task_Toogle_BOOT", 4096, NULL, 2, NULL);
-   xTaskCreate(task_keypad, "Task Keypad", 2048, NULL, 2, NULL);
+   //xTaskCreate(task_keypad, "Task Keypad", 2048, NULL, 2, NULL);
+  xTaskCreate(taskActuator_Execution, "Task Actuator", 2048, NULL, 2, NULL);
 
   Serial.println(">> Dang kiem tra File System...");
   check_info_File(0); // chuyển tạm xuống dưới cùng
