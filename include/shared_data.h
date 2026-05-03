@@ -14,6 +14,12 @@
 #define HUMI_NORMAL 5
 #define HUMI_HIGH 6
 
+#define SERVO_PIN       38 
+#define LED_PIN         48
+
+#define ROW_NUM         4 
+#define COLUMN_NUM      4
+
 typedef struct {
     char wifi_ssid[32];
     char wifi_pass[64];
@@ -61,4 +67,20 @@ int get_state_temp();
 int get_state_humi();
 void set_state_temp(uint8_t tempState);
 void set_state_humi(uint8_t humiState);
+
+
+// ==========================================
+// CÁC HÀM BỔ SUNG CHO LÒ ẤP TRỨNG (NODE 1)
+// ==========================================
+// 1. Chế độ hoạt động (true = Auto, false = Manual)
+void set_auto_mode(bool mode);
+bool get_auto_mode();
+
+// 2. Độ sáng đèn sưởi giả lập (0 - 255)
+void set_heater_pwm(int pwm);
+int get_heater_pwm();
+
+// 3. Góc quay máy đảo trứng (0 - 180 độ)
+void set_servo_angle(int angle);
+int get_servo_angle();
 #endif

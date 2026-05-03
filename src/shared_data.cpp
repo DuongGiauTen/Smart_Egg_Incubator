@@ -109,3 +109,57 @@ int get_neo_brightness() {
     return current_neo_brightness;
 }
 
+// ==========================================
+// PHẦN LOGIC BỔ SUNG CHO LÒ ẤP TRỨNG (NODE 1)
+// ==========================================
+static bool is_auto_mode = true;       // Mặc định bật lên là chạy Tự động
+static int current_heater_pwm = 0;     // Mặc định đèn sưởi tắt
+static int current_servo_angle = 90;   // Mặc định máy đảo trứng ở góc giữa
+
+void set_auto_mode(bool mode) {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        is_auto_mode = mode;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
+
+bool get_auto_mode() {
+    bool mode;
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        mode = is_auto_mode;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+    return mode;
+}
+
+void set_heater_pwm(int pwm) {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        current_heater_pwm = pwm;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
+
+int get_heater_pwm() {
+    int pwm;
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        pwm = current_heater_pwm;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+    return pwm;
+}
+
+void set_servo_angle(int angle) {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        current_servo_angle = angle;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
+
+int get_servo_angle() {
+    int angle;
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        angle = current_servo_angle;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+    return angle;
+}

@@ -68,6 +68,7 @@ void neo_blinky(void *pvParameters){
 
             // Cập nhật dải đèn LED với màu vừa set
             strip.show(); 
+            vTaskDelay(pdMS_TO_TICKS(1000)); // Nhường CPU cho các Task khác
         }
     }
 }
