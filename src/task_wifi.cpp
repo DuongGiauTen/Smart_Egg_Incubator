@@ -63,7 +63,7 @@ void startSTA()
     }
 
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\n>> Da vao mang STA! IP: %s\n", WiFi.localIP().toString().c_str());
+        Serial.printf("\n>> Da vao mang STA! IP: %s\n", WiFi.localIP().toString().c_str());// Trace IP
         xSemaphoreGive(xBinarySemaphoreInternet);
         
         // Nếu AP đang bật mà bắt được mạng nhà -> Tắt AP đi

@@ -17,7 +17,7 @@
 #include "task_core_iot.h"
 #include "lcd_display.h"
 #include "tinyml.h"
-// #include "mock.h"
+#include "mock.h"
 
 void setup()
 {
@@ -44,11 +44,11 @@ void setup()
           vTaskDelay(pdMS_TO_TICKS(1000));
       } }, "Task WiFi Monitor", 8192, NULL, 2, NULL);
 
-  xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
-  xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
-  xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
+  //xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
+  //xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
+  //xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
 
-  // xTaskCreate(mock_function, "Task Mock", 2048, NULL, 2, NULL);
+  xTaskCreate(mock_function, "Task Mock", 2048, NULL, 2, NULL);
   xTaskCreate(task_webserver, "Task Web", 8192, NULL, 3, NULL);
   // xTaskCreate(main_server_task, "Task Main Server" ,8192  ,NULL  ,2 , NULL);
   xTaskCreate(tiny_ml_task, "Tiny ML Task" ,2048  ,NULL  ,2 , NULL);

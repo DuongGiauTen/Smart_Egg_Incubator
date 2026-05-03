@@ -54,6 +54,7 @@ void tiny_ml_task(void *pvParameters) {
         // 2. Xử lý lưu trữ vào bộ đệm
         if (is_first_run) {
             // Lần chạy đầu tiên: Copy số liệu hiện tại cho cả 5 ô
+            vTaskDelay(pdMS_TO_TICKS(2000)); 
             for (int i = 0; i < 5; i++) {
                 temp_history[i] = current_temp;
                 humi_history[i] = current_humi;
@@ -90,11 +91,11 @@ void tiny_ml_task(void *pvParameters) {
         Serial.print("% ===> AI KẾT LUẬN: ");
 
         if (prob_reliable > prob_error) {
-            Serial.println("DỮ LIỆU TIN CẬY ✅ (Cho phép gửi Cloud)");
+            Serial.println("DỮ LIỆU TIN CẬY (Cho phép gửi Cloud)");
             // Phất cờ cho phép Task CoreIOT lấy dữ liệu gửi đi
             xSemaphoreGive(xDataReliableSemaphore); 
         } else {
-            Serial.println("RÁC / NHIỄU CẢM BIẾN ❌ (Chặn, không gửi Cloud)");
+            Serial.println("RÁC / NHIỄU CẢM BIẾN (Chặn, không gửi Cloud)");
         }
 
         vTaskDelay(pdMS_TO_TICKS(2000)); // AI chạy mỗi 2 giây

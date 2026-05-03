@@ -1,6 +1,7 @@
 #include "task_core_iot.h"
 #include "shared_data.h"
 #include "task_check_info.h"
+#include "task_wifi.h"
 
 // Khởi tạo đối tượng ThingsBoard
 constexpr uint32_t MAX_MESSAGE_SIZE = 1024U;
@@ -24,6 +25,7 @@ void coreiot_task(void *pvParameters) {
 
     while (1) {
         // 2. LẤY THÔNG TIN KẾT NỐI TỪ KÉT SẮT (Do WebServer của Task 4 lưu vào)
+        Serial.printf("\n>> Da vao mang STA! IP: %s\n", WiFi.localIP().toString().c_str());
         String server = "";
         String token = "";
         String port_str = "";
