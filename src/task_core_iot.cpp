@@ -10,89 +10,41 @@ WiFiClient wifiClient;
 Arduino_MQTT_Client mqttClient(wifiClient);
 ThingsBoard tb(mqttClient, MAX_MESSAGE_SIZE);
 
-// =======================================================
-// CÁC HÀM XỬ LÝ LỆNH TỪ CLOUD GỬI XUỐNG (RPC)
-// =======================================================
-
-// 1. Nhận lệnh chuyển đổi chế độ Auto / Manual
-RPC_Response processSetMode(const RPC_Data &data)
+// --- 1. NGHE DỮ LIỆU TỪ MÂY ĐỂ HIỂN THỊ LCD ---
+RPC_Response processUpdateTemp(const RPC_Data &data)
 {
-    bool mode = data; // true là Auto, false là Manual
-    set_auto_mode(mode);
-    if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
-    {
-        Serial.printf(">> [RPC Cloud] Node 2 ra lenh chuyen che do: %s\n", mode ? "AUTO" : "MANUAL");
-        xSemaphoreGive(xSerialMutex);
-    }
-    return RPC_Response("mode", mode);
+    float temp = data;
+    set_sensor_data(temp, get_humidity()); // Cập nhật Temp, giữ nguyên Humi
+    return RPC_Response("update_temp", temp);
 }
 
-// 2. Nhận lệnh chỉnh độ sáng đèn sưởi
-RPC_Response processSetHeater(const RPC_Data &data)
+RPC_Response processUpdateHumi(const RPC_Data &data)
 {
-    int val = data;
-    // Chỉ cho phép Node 2 can thiệp nếu hệ thống đang tắt Auto
-    if (!get_auto_mode())
-    {
-        set_heater_pwm(val);
-        if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
-        {
-            Serial.printf(">> [RPC Cloud] Node 2 ra lenh chinh den: %d\n", val);
-            xSemaphoreGive(xSerialMutex);
-        }
-    }
-    return RPC_Response("heater", val);
+    float humi = data;
+    set_sensor_data(get_temperature(), humi); // Cập nhật Humi, giữ nguyên Temp
+    return RPC_Response("update_humi", humi);
 }
 
-// 3. Nhận lệnh quay máy đảo trứng (Servo)
-RPC_Response processSetServo(const RPC_Data &data)
-{
-    int val = data;
-    if (!get_auto_mode())
-    {
-        set_servo_angle(val);
-        if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
-        {
-            Serial.printf(">> [RPC Cloud] Node 2 ra lenh quay Servo goc: %d\n", val);
-            xSemaphoreGive(xSerialMutex);
-        }
-    }
-    return RPC_Response("servo", val);
-}
-
-// Khai báo danh sách các lệnh để "nộp" cho CoreIoT
-const size_t callbacks_size = 3;
+const size_t callbacks_size = 2;
 RPC_Callback callbacks[callbacks_size] = {
-    {"set_mode", processSetMode},
-    {"set_heater", processSetHeater},
-    {"set_servo", processSetServo}};
+    {"update_temp", processUpdateTemp},
+    {"update_humi", processUpdateHumi}};
 
 bool is_subscribed = false;
 
-// =======================================================
-// TASK CHÍNH CỦA CORE IOT
-// =======================================================
+// --- 2. TASK CHÍNH ---
 void coreiot_task(void *pvParameters)
 {
-    Serial.println(">> Task CoreIoT Started! Cho mang Internet...");
+    Serial.println(">> [Node 2] Task CoreIoT Started!");
 
-    while (1)
+    while (WiFi.status() != WL_CONNECTED)
     {
-        if (WiFi.status() == WL_CONNECTED)
-        {
-            break;
-        }
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    Serial.println(">> CoreIoT da nhan dien duoc Internet!");
-
-    unsigned long last_send = 0;
 
     while (1)
     {
-        String server = "";
-        String token = "";
-        String port_str = "";
+        String server = "", token = "", port_str = "";
 
         if (xSemaphoreTake(xConfigMutex, portMAX_DELAY))
         {
@@ -111,62 +63,47 @@ void coreiot_task(void *pvParameters)
         if (!tb.connected())
         {
             is_subscribed = false;
-            Serial.printf(">> Ket noi CoreIoT Server: %s, Port: %s...\n", server.c_str(), port_str.c_str());
-
             if (!tb.connect(server.c_str(), token.c_str(), port_str.toInt()))
             {
-                Serial.println(">> Loi ket noi CoreIoT. Thu lai sau 5s...");
                 vTaskDelay(pdMS_TO_TICKS(5000));
                 continue;
             }
-            Serial.println(">> Da ket noi CoreIOT Cloud thanh cong!");
         }
 
-        // Đăng ký nhận lệnh từ Cloud
-    // Ép kiểu rõ ràng thành con trỏ (Pointer) để C++ không bị nhầm lẫn
-        RPC_Callback* first_callback = callbacks;
-        RPC_Callback* last_callback = callbacks + callbacks_size;
+        RPC_Callback *first_callback = callbacks;
+        RPC_Callback *last_callback = callbacks + callbacks_size;
 
-        // Xin phép Cloud để lắng nghe 3 lệnh RPC đã khai báo ở trên
-        if (!is_subscribed) {
-            if (tb.RPC_Subscribe(first_callback, last_callback)) {
-                if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
-                    Serial.println(">> Da dang ky nhận lenh tu xa (RPC) thanh cong!");
-                    xSemaphoreGive(xSerialMutex);
-                }
-                is_subscribed = true;
-            }
-        }
-
-        tb.loop();
-
-        // CHỈ BƠM DỮ LIỆU KHI TINYML CHO PHÉP (Kế thừa logic cũ)
-        if (xSemaphoreTake(xDataReliableSemaphore, pdMS_TO_TICKS(10)) == pdTRUE)
+        if (!is_subscribed)
         {
+            // 1. Dọn dẹp rác bộ nhớ của lần thất bại trước (nếu có)
+            tb.RPC_Unsubscribe();
 
-            float t = get_temperature();
-            float h = get_humidity();
-            bool mode = get_auto_mode();
-            int heater = get_heater_pwm();
-            int servo = get_servo_angle();
-
-            if (t != -1 && h != -1)
+            if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
             {
-                // Báo cáo đầy đủ mọi trạng thái lên Cloud
-                tb.sendTelemetryData("temperature", t);
-                tb.sendTelemetryData("humidity", h);
-                tb.sendTelemetryData("auto_mode", mode ? 1 : 0);
-                tb.sendTelemetryData("heater_pwm", heater);
-                tb.sendTelemetryData("servo_angle", servo);
+                Serial.println(">> Dang gui yeu cau dang ky RPC len Cloud...");
+                xSemaphoreGive(xSerialMutex);
+            }
 
+            // 2. Thử đăng ký lại
+            if (tb.RPC_Subscribe(first_callback, last_callback))
+            {
+                is_subscribed = true;
                 if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
                 {
-                    Serial.println(">> [CoreIoT] Da cap nhat trang thai len Cloud!");
+                    Serial.println(">> Da mo RPC san sang nghe du lieu!");
                     xSemaphoreGive(xSerialMutex);
                 }
             }
+            else
+            {
+                // 3. NẾU THẤT BẠI: Bắt buộc phải ngủ 3 giây rồi mới thử lại, cấm spam!
+                if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
+                {
+                    Serial.println(">> Dang ky RPC that bai. Thu lai sau 3 giay...");
+                    xSemaphoreGive(xSerialMutex);
+                }
+                vTaskDelay(pdMS_TO_TICKS(3000));
+            }
         }
-
-        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

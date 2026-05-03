@@ -35,31 +35,25 @@ void lcd_display_task(void *pvParameters) {
         // DÒNG 2: HIỂN THỊ TRẠNG THÁI (Ví dụ: T:NORM  H:HIGH)
         // ==========================================
         
-        if (get_auto_mode()) {
-            lcd.setCursor(0, 1);
-            lcd.print("MODE: AUTO   ");
-        } else {
-            lcd.setCursor(0, 1);
-            lcd.print("MODE: MANUAL  ");
+       
+
+        
+        lcd.setCursor(0, 1);
+        switch (temp_state) {
+            case TEMP_LOW:    lcd.print("T:LOW   "); break;
+            case TEMP_NORMAL: lcd.print("T:NORM  "); break;
+            case TEMP_HIGH:   lcd.print("T:HIGH  "); break;
+            default:          lcd.print("T:UNK   "); break;
         }
 
-        // Trạng thái Nhiệt độ (Góc dưới bên trái, tối đa 8 ký tự)
-        // lcd.setCursor(0, 1);
-        // switch (temp_state) {
-        //     case TEMP_LOW:    lcd.print("T:LOW   "); break;
-        //     case TEMP_NORMAL: lcd.print("T:NORM  "); break;
-        //     case TEMP_HIGH:   lcd.print("T:HIGH  "); break;
-        //     default:          lcd.print("T:UNK   "); break;
-        // }
-
-        // // Trạng thái Độ ẩm (Góc dưới bên phải, bắt đầu từ cột 8)
-        // lcd.setCursor(8, 1);
-        // switch (humi_state) {
-        //     case HUMI_LOW:    lcd.print("H:LOW   "); break;
-        //     case HUMI_NORMAL: lcd.print("H:NORM  "); break;
-        //     case HUMI_HIGH:   lcd.print("H:HIGH  "); break;
-        //     default:          lcd.print("H:UNK   "); break;
-        // }
+        // Trạng thái Độ ẩm (Góc dưới bên phải, bắt đầu từ cột 8)
+        lcd.setCursor(8, 1);
+        switch (humi_state) {
+            case HUMI_LOW:    lcd.print("H:LOW   "); break;
+            case HUMI_NORMAL: lcd.print("H:NORM  "); break;
+            case HUMI_HIGH:   lcd.print("H:HIGH  "); break;
+            default:          lcd.print("H:UNK   "); break;
+        }
         
         // Nghỉ ngơi 100ms trước khi cập nhật lại khung hình
         vTaskDelay(pdMS_TO_TICKS(100));

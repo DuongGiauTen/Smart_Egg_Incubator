@@ -85,4 +85,16 @@ int get_heater_pwm();
 // 3. Góc quay máy đảo trứng (0 - 180 độ)
 void set_servo_angle(int angle);
 int get_servo_angle();
+
+// --- CÁC CỜ BÁO HIỆU GỬI LỆNH TỪ KEYPAD LÊN CLOUD ---
+extern bool flag_toggle_mode;
+extern bool flag_toggle_heater;
+extern bool flag_toggle_servo;
+
+void request_toggle_mode();
+void request_toggle_heater();
+void request_toggle_servo();
+
+
+
 #endif

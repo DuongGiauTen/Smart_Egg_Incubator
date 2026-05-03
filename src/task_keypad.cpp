@@ -23,9 +23,26 @@ void task_keypad(void *pvParameters)
         char key = keypad.getKey();
         if (key)
         {
-            Serial.println("Key pressed: " + String(key));
+            if (xSemaphoreTake(xSerialMutex, portMAX_DELAY))
+            {
+                Serial.println(">> [KEYPAD] Da nhan phim: " + String(key));
+
+                if (key == 'A')
+                { // Đổi chế độ Auto/Manual
+                    request_toggle_mode();
+                }
+                else if (key == 'B')
+                { // Bật/tắt đèn sưởi
+                    request_toggle_heater();
+                }
+                else if (key == 'C')
+                { // Đảo Servo
+                    request_toggle_servo();
+                }
+
+                xSemaphoreGive(xSerialMutex);
+            }
         }
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
-    // Ngủ 50ms để chống dội phím (Debounce) và nhường CPU
-    vTaskDelay(pdMS_TO_TICKS(50));
 }

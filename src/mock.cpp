@@ -4,7 +4,7 @@ void mock_function(void *pvParameters)
 {
     int counter = 0;
     int temp = 200;
-    int humi = 0;
+    int humi = 590;
     while (1)
     {
 
@@ -18,7 +18,7 @@ void mock_function(void *pvParameters)
         // Serial.println("%");
 
         if (temp >400) temp = 200;
-        if (humi > 1000) humi = 0;
+        if (humi > 850) humi = 590;
 
         counter++;
         // Serial.print("[MOCK] Counter: ");

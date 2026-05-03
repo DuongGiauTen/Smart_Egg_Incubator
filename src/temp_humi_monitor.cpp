@@ -1,64 +1,37 @@
 #include "temp_humi_monitor.h"
 #include "shared_data.h"
 
-DHT20 dht20;
-// Đã CHUYỂN phần khai báo LCD sang file của Task LCD để code gọn gàng hơn
+void temp_humi_monitor(void *pvParameters) {
+    Serial.println(">> [MONITOR] Task danh gia Nhiet/Am (Node 2) bat dau!");
 
-void temp_humi_monitor(void *pvParameters){
-    //Wire.begin(11, 12);
-    dht20.begin();
+    while (1) {
+        // 1. Lấy dữ liệu trực tiếp từ "Két sắt" (dữ liệu này do CoreIoT lấy từ Cloud về)
+        float temperature = get_temperature();
+        float humidity = get_humidity();
 
-    while (1){
-        dht20.read();
-        float temperature = dht20.getTemperature();
-        float humidity = dht20.getHumidity();
-
-        if (isnan(temperature) || isnan(humidity)) {
-            Serial.println("Failed to read from DHT sensor!");
-        } else {
-            // 1. Cất dữ liệu an toàn và phất cờ cho Task 1 (LED), Task 2 (Neo)
-            set_sensor_data(temperature, humidity);
-
-            // 2. ĐÁNH GIÁ ĐIỀU KIỆN ĐỂ PHẤT CỜ CHO LCD (Yêu cầu của Task 3)
-            // Giả sử: 
-            // - Bình thường: Nhiệt độ < 28 VÀ Độ ẩm >= 40
-            // - Nguy hiểm: Nhiệt độ > 32 HOẶC Độ ẩm < 30
-            // - Cảnh báo: Các trường hợp còn lại
+        // Kiểm tra xem đã nhận được dữ liệu từ Cloud chưa (khác giá trị mặc định -1)
+        if (temperature != -1 && humidity != -1) {
             
-            if (temperature > 30 ){
+            // 2. Đánh giá trạng thái NHIỆT ĐỘ LÒ ẤP (Để Node 2 chớp đèn cảnh báo nếu cần)
+            if (temperature > 30.0) {
                 set_state_temp(TEMP_HIGH);
-            } else if (temperature < 25){
+            } else if (temperature < 25.0) {
                 set_state_temp(TEMP_LOW);
             } else {
                 set_state_temp(TEMP_NORMAL);
             }
 
-
-            if (humidity < 60){
+            // 3. Đánh giá trạng thái ĐỘ ẨM LÒ ẤP
+            if (humidity < 60) {
                 set_state_humi(HUMI_LOW);
-            } else if (humidity > 80){
+            } else if (humidity > 70) {
                 set_state_humi(HUMI_HIGH);
             } else {
                 set_state_humi(HUMI_NORMAL);
             }
-
-            // Serial.print("Humidity: ");
-            // Serial.print(humidity);
-            // Serial.print("%  Temperature: ");
-            // Serial.print(temperature);
-            // Serial.println("°C");
-
-            // Bọc đoạn in thông số định kỳ
-            if (xSemaphoreTake(xSerialMutex, portMAX_DELAY)) {
-                Serial.print("Humidity: ");
-                Serial.print(humidity);
-                Serial.print("%  Temperature: ");
-                Serial.print(temperature);
-                Serial.println("°C");
-                xSemaphoreGive(xSerialMutex); // Nhả khóa
-            }
-
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        
+        
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }

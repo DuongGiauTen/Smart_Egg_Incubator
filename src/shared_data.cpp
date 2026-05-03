@@ -163,3 +163,29 @@ int get_servo_angle() {
     }
     return angle;
 }
+
+// --- KHỞI TẠO CỜ HIỆU ---
+bool flag_toggle_mode = false;
+bool flag_toggle_heater = false;
+bool flag_toggle_servo = false;
+
+void request_toggle_mode() {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        flag_toggle_mode = true;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
+
+void request_toggle_heater() {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        flag_toggle_heater = true;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
+
+void request_toggle_servo() {
+    if(xSemaphoreTake(xSensorDataMutex, portMAX_DELAY)) {
+        flag_toggle_servo = true;
+        xSemaphoreGive(xSensorDataMutex);
+    }
+}
