@@ -44,8 +44,8 @@ void setup()
           vTaskDelay(pdMS_TO_TICKS(1000));
       } }, "Task WiFi Monitor", 8192, NULL, 2, NULL);
 
-  //xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
-  //xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
+  xTaskCreate(led_blinky, "Task LED Blink", 2048, NULL, 2, NULL);
+  xTaskCreate(neo_blinky, "Task NEO Blink", 2048, NULL, 2, NULL);
   //xTaskCreate(temp_humi_monitor, "Task TEMP HUMI Monitor", 2048, NULL, 2, NULL);
 
   xTaskCreate(mock_function, "Task Mock", 2048, NULL, 2, NULL);
